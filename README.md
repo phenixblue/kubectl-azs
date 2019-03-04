@@ -25,7 +25,7 @@ The utility is written in `go` and uses the `cobra` and `goreleaser` projects.
     ```
 - List nodes/pods by Availability Zone
     ```
-    $ kubectl azs azs
+    $ kubectl azs nodes
     $ kubectl azs pods
     ```
 
