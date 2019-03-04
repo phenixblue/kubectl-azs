@@ -38,7 +38,7 @@
   analyzer-version = 1
   input-imports = [
     "github.com/liggitt/tabwriter",
-    "github.com/spf13/cobra"
+    "github.com/spf13/cobra",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

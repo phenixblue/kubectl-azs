@@ -19,8 +19,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/liggitt/tabwriter"
 	"github.com/phenixblue/kubectl-azs/pkg/k8s"
+	"github.com/phenixblue/kubectl-azs/pkg/printers"
 	"github.com/spf13/cobra"
 )
 
@@ -134,16 +134,7 @@ func buildPods(nodeinfo map[string]string, nodeazs map[string]struct{}, k8sNames
 
 	//fmt.Println(podMap)
 
-	const (
-		tabwriterMinWidth = 6
-		tabwriterWidth    = 4
-		tabwriterPadding  = 3
-		tabwriterPadChar  = ' '
-		tabwriterFlags    = tabwriter.RememberWidths
-	)
-
-	w := new(tabwriter.Writer)
-	w.Init(os.Stdout, tabwriterMinWidth, tabwriterWidth, tabwriterPadding, tabwriterPadChar, tabwriterFlags)
+	w := printers.GetNewTabWriter(os.Stdout)
 	defer w.Flush()
 	fmt.Fprintln(w, "NAME\tNAMESPACE\tNODE\tAZ\t")
 
