@@ -1,0 +1,12 @@
+*.crt
+*.pem
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+.goreleaser_token
+dist/
+azs.tar.gz
