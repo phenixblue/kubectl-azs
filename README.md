@@ -7,7 +7,7 @@ The `azs` CLI is a utlity that can be used as a standalone binary or as a `kubec
 `kubectl` to be installed, a valid kubeconfig referenced via the `KUBECONFIG` environment variable, and the `failure-domain.beta.kubernetes.io/zone`
 label to be set for the cluster nodes.
 
-This was an opportunity for me to start working with golang and is meant to be a simple example for building kubectl a plugin.
+This was an opportunity for me to start working with golang and is meant to be a simple example for building a kubectl plugin.
 
 The utility is written in [go](https://golang.org) and uses the [cobra](https://github.com/spf13/cobra), [dep](https://github.com/golang/dep), and [goreleaser](https://goreleaser.com) projects.
 
