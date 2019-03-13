@@ -17,7 +17,11 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"sort"
+	"strings"
 
+	"github.com/phenixblue/kubectl-azs/pkg/k8s"
+	"github.com/phenixblue/kubectl-azs/pkg/printers"
 	"github.com/spf13/cobra"
 )
 
@@ -34,6 +38,57 @@ var rootCmd = &cobra.Command{
 	Long: `The "azs" utility is a tool to list Kubernetes objects by Availability Zone. The utility can
 be used standalone or as a "kubectl" plugin. The "kubectl" utlity needs to be installed and the "KUBECONFIG" 
 environment variable needs to be set to a valid kubeconfig file.`,
+	Run: func(cmd *cobra.Command, args []string) {
+
+		kubernetes := k8s.NewKubernetesCmd(true)
+		out, err := kubernetes.ExecuteCommand("get", "nodes", "-l", "failure-domain.beta.kubernetes.io/zone", "-o", "custom-columns=NAME:.metadata.name,AZ:.metadata.labels.failure-domain\\.beta\\.kubernetes\\.io/zone")
+
+		if err != nil {
+
+			fmt.Println(string(out))
+			fmt.Println(err)
+			os.Exit(1)
+
+		}
+
+		azs := make(map[string]struct{})
+		nodes := strings.Split(string(out), "\n")
+
+		for _, node := range nodes {
+
+			if string(node) != "" {
+
+				kv := strings.Split(string(node), "   ")
+
+				v := kv[1]
+
+				azs[v] = struct{}{}
+
+			}
+
+		}
+
+		azsSort := make([]string, 0, len(azs))
+
+		for az := range azs {
+			azsSort = append(azsSort, az)
+		}
+
+		sort.Strings(azsSort)
+
+		w := printers.GetNewTabWriter(os.Stdout)
+		defer w.Flush()
+		fmt.Fprintln(w, "AZ")
+
+		for _, az := range azsSort {
+
+			if az != "" {
+				fmt.Fprintln(w, az)
+			}
+
+		}
+
+	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
