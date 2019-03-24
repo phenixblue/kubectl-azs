@@ -73,9 +73,12 @@ where the pods are scheduled.`,
 
 			if string(node) != "" {
 
-				kv := strings.Split(string(node), "   ")
+				kv := strings.Fields(string(node))
 
 				k, v := kv[0], kv[1]
+
+				// Print k,v for debug
+				//fmt.Println(k, v)
 
 				nodeinfo[k] = v
 				nodeazs[v] = struct{}{}
@@ -127,7 +130,7 @@ func buildPods(nodeinfo map[string]string, nodeazs map[string]struct{}, k8sNames
 			podMap[p.name] = p
 
 			// Print pod info for debug
-			//fmt.Printf("Pod: %s\n", podMap[p.name])
+			fmt.Printf("Pod: %s\n", podMap[p.name])
 		}
 
 	}
