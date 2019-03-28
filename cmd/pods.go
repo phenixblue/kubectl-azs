@@ -130,7 +130,7 @@ func buildPods(nodeinfo map[string]string, nodeazs map[string]struct{}, k8sNames
 			podMap[p.name] = p
 
 			// Print pod info for debug
-			fmt.Printf("Pod: %s\n", podMap[p.name])
+			//fmt.Printf("Pod: %s\n", podMap[p.name])
 		}
 
 	}
