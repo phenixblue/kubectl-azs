@@ -19,7 +19,7 @@ import "github.com/phenixblue/kubectl-azs/cmd"
 var (
 
 	// VERSION defines the version of the utility.
-	VERSION = "v0.0.5"
+	VERSION = "v0.0.6"
 )
 
 func main() {
