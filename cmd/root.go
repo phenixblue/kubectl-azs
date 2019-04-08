@@ -58,7 +58,7 @@ environment variable needs to be set to a valid kubeconfig file.`,
 
 			if string(node) != "" {
 
-				kv := strings.Split(string(node), "   ")
+				kv := strings.Fields(string(node))
 
 				v := kv[1]
 
@@ -78,7 +78,6 @@ environment variable needs to be set to a valid kubeconfig file.`,
 
 		w := printers.GetNewTabWriter(os.Stdout)
 		defer w.Flush()
-		fmt.Fprintln(w, "AZ")
 
 		for _, az := range azsSort {
 
