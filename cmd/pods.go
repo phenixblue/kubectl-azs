@@ -19,8 +19,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/phenixblue/kubectl-azs/pkg/k8s"
-	"github.com/phenixblue/kubectl-azs/pkg/printers"
+	"kubectl-azs/pkg/k8s"
+	"kubectl-azs/pkg/printers"
+
 	"github.com/spf13/cobra"
 )
 

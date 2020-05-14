@@ -18,7 +18,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/phenixblue/kubectl-azs/pkg/k8s"
+	"kubectl-azs/pkg/k8s"
+
 	"github.com/spf13/cobra"
 )
 

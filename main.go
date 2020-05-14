@@ -14,7 +14,7 @@
 
 package main
 
-import "github.com/phenixblue/kubectl-azs/cmd"
+import "kubectl-azs/cmd"
 
 var (
 
