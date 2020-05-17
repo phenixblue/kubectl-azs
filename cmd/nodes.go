@@ -22,7 +22,6 @@ import (
 	"kubectl-azs/pkg/printers"
 
 	"github.com/spf13/cobra"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // nodesCmd represents the nodes command
@@ -38,24 +37,18 @@ var nodesCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		nodes, err := client.CoreV1().Nodes().List(metav1.ListOptions{LabelSelector: azLabel})
+		nodes, label, err := kube.GetNodes(client, azLabel, cmd.Flags().Changed("label"))
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-
-		if len(nodes.Items) < 1 {
-			fmt.Printf("No nodes with target AZ label (%q) found\n", azLabel)
-			os.Exit(1)
-		}
-
 		w := printers.GetNewTabWriter(os.Stdout)
 		defer w.Flush()
 		fmt.Fprintln(w, "NODE NAME\tAZ\t")
 
 		for _, node := range nodes.Items {
 
-			fmt.Fprintf(w, "%v\t%v\t\n", node.GetName(), node.GetLabels()[azLabel])
+			fmt.Fprintf(w, "%v\t%v\t\n", node.GetName(), node.GetLabels()[label])
 
 		}
 
