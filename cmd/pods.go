@@ -59,7 +59,7 @@ where the pods are scheduled.`,
 			os.Exit(1)
 		}
 
-		nodes, err := client.CoreV1().Nodes().List(metav1.ListOptions{LabelSelector: azLabel})
+		nodes, label, err := kube.GetNodes(client, azLabel, cmd.Flags().Changed("label"))
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -71,11 +71,11 @@ where the pods are scheduled.`,
 			os.Exit(1)
 		}
 
-		nodeList := buildNodeList(nodes)
+		nodeList := buildNodeList(nodes, label)
 		podList := buildPodList(nodeList, pods)
 
 		if len(nodeList) < 1 {
-			fmt.Printf("No nodes with target AZ label (%q) found\n", azLabel)
+			fmt.Printf("No nodes with target AZ label (%q) found\n", label)
 			os.Exit(1)
 		} else if len(podList) < 1 {
 			fmt.Printf("No pods were found in namespace %q\n", namespace)
@@ -99,7 +99,7 @@ func init() {
 	rootCmd.AddCommand(podsCmd)
 }
 
-func buildNodeList(nodes *v1.NodeList) map[string]nodeObj {
+func buildNodeList(nodes *v1.NodeList, label string) map[string]nodeObj {
 
 	tmpNodeList := make(map[string]nodeObj)
 
@@ -107,7 +107,7 @@ func buildNodeList(nodes *v1.NodeList) map[string]nodeObj {
 
 		newNode := nodeObj{
 			name: node.Name,
-			az:   node.GetLabels()[azLabel],
+			az:   node.GetLabels()[label],
 		}
 
 		tmpNodeList[newNode.name] = newNode

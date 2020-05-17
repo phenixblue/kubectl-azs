@@ -23,7 +23,6 @@ import (
 	"kubectl-azs/pkg/printers"
 
 	"github.com/spf13/cobra"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (
@@ -54,20 +53,15 @@ be used standalone or as a "kubectl" plugin`,
 			os.Exit(1)
 		}
 
-		nodes, err := client.CoreV1().Nodes().List(metav1.ListOptions{LabelSelector: azLabel})
+		nodes, label, err := kube.GetNodes(client, azLabel, cmd.Flags().Changed("label"))
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 
-		if len(nodes.Items) < 1 {
-			fmt.Printf("No nodes with target AZ label (%q) found\n", azLabel)
-			os.Exit(1)
-		}
-
 		for _, node := range nodes.Items {
 
-			azs[node.GetLabels()[azLabel]] = node.GetLabels()[azLabel]
+			azs[node.GetLabels()[label]] = node.GetLabels()[label]
 
 		}
 
@@ -113,7 +107,7 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVarP(&kubeconfig, "kubeconfig", "", "", "Kubernetes configuration file")
 	rootCmd.PersistentFlags().StringVar(&configContext, "context", "", "The name of the kubeconfig context to use")
-	rootCmd.PersistentFlags().StringVarP(&namespace, "namespace", "n", "default", "The Namespace where the proxyctl ConfigMap is located")
-	rootCmd.PersistentFlags().StringVarP(&azLabel, "label", "l", "failure-domain.kubernetes.io/zone", "The target label that defines the Availability Zone on nodes")
+	rootCmd.PersistentFlags().StringVarP(&namespace, "namespace", "n", "", "The Namespace to use when listing Pods")
+	rootCmd.PersistentFlags().StringVarP(&azLabel, "label", "l", "failure-domain.kubernetes.io/zone", "The target label that defines the Availability Zone on nodes. The default value also includes\nthe beta version of the same label")
 
 }
