@@ -14,12 +14,12 @@
 
 package main
 
-import "github.com/phenixblue/kubectl-azs/cmd"
+import "kubectl-azs/cmd"
 
 var (
 
 	// VERSION defines the version of the utility.
-	VERSION = "v0.0.6"
+	VERSION = "v0.0.7"
 )
 
 func main() {
