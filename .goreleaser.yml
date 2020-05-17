@@ -5,21 +5,22 @@ before:
     # You may remove this if you don't use go modules.
     - go mod download
 builds:
-binary: azs
-  env:
-  - CGO_ENABLED=0
-  goos:
-    - linux
-    - darwin
-    - windows
-  goarch:
-    - amd64
-    - ppc64le
-  ignore:
-    - goos: darwin
-      goarch: ppc64le
-    - goos: windows
-      goarch: ppc64le
+  -
+    binary: azs
+    env:
+    - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - ppc64le
+    ignore:
+      - goos: darwin
+        goarch: ppc64le
+      - goos: windows
+        goarch: ppc64le
 archives:
 - replacements:
     darwin: macos
