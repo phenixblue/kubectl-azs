@@ -17,12 +17,13 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"strings"
 
-	"kubectl-azs/pkg/k8s"
+	"kubectl-azs/pkg/kube"
 	"kubectl-azs/pkg/printers"
 
 	"github.com/spf13/cobra"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // podObj is an instance of a Kubernetes Pod Object
@@ -33,6 +34,17 @@ type podObj struct {
 	az        string
 }
 
+// nodeObj is an instance of a Kubernetes Node
+type nodeObj struct {
+	name string
+	az   string
+}
+
+var (
+	podList  []podObj
+	nodeList map[string]nodeObj
+)
+
 // podsCmd represents the pods command
 var podsCmd = &cobra.Command{
 	Use:   "pods",
@@ -41,128 +53,87 @@ var podsCmd = &cobra.Command{
 where the pods are scheduled.`,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		// k8sNamespace is a variable to store the namespace argument.
-		var k8sNamespaceArg string
-
-		if cmd.Flag("namespace").Value.String() != "" {
-
-			k8sNamespaceArg = "-n" + cmd.Flag("namespace").Value.String()
-		} else {
-
-			k8sNamespaceArg = "--all-namespaces"
-		}
-
-		kubernetes := k8s.NewKubernetesCmd(true)
-		out, err := kubernetes.ExecuteCommand("get", "nodes", "-l", "failure-domain.beta.kubernetes.io/zone", "-o", "custom-columns=NAME:.metadata.name,AZ:.metadata.labels.failure-domain\\.beta\\.kubernetes\\.io/zone", "--no-headers")
-
+		client, err := kube.CreateKubeClient(kubeconfig, configContext)
 		if err != nil {
-
-			fmt.Println(string(out))
 			fmt.Println(err)
 			os.Exit(1)
-
 		}
 
-		// Print stdout for debug
-		//fmt.Println(string(out))
-
-		nodeinfo := make(map[string]string)
-		nodeazs := make(map[string]struct{})
-		nodes := strings.Split(string(out), "\n")
-
-		for _, node := range nodes {
-
-			if string(node) != "" {
-
-				kv := strings.Fields(string(node))
-
-				k, v := kv[0], kv[1]
-
-				// Print k,v for debug
-				//fmt.Println(k, v)
-
-				nodeinfo[k] = v
-				nodeazs[v] = struct{}{}
-
-			}
-
+		nodes, err := client.CoreV1().Nodes().List(metav1.ListOptions{LabelSelector: azLabel})
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
 		}
 
-		buildPods(nodeinfo, nodeazs, k8sNamespaceArg)
+		pods, err := client.CoreV1().Pods(namespace).List(metav1.ListOptions{})
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		nodeList := buildNodeList(nodes)
+		podList := buildPodList(nodeList, pods)
+
+		if len(nodeList) < 1 {
+			fmt.Printf("No nodes with target AZ label (%q) found\n", azLabel)
+			os.Exit(1)
+		} else if len(podList) < 1 {
+			fmt.Printf("No pods were found in namespace %q\n", namespace)
+			os.Exit(1)
+		}
+
+		w := printers.GetNewTabWriter(os.Stdout)
+		defer w.Flush()
+		fmt.Fprintln(w, "NAME\tNAMESPACE\tNODE\tAZ\t")
+
+		for _, pod := range podList {
+
+			fmt.Fprintf(w, "%v\t%v\t%v\t%v\t\n", pod.name, pod.namespace, pod.node, pod.az)
+
+		}
 
 	},
 }
 
-func buildPods(nodeinfo map[string]string, nodeazs map[string]struct{}, k8sNamespaceCmd string) {
-
-	podMap := make(map[string]podObj)
-	var out string
-
-	kubernetes := k8s.NewKubernetesCmd(true)
-
-	out, err := kubernetes.ExecuteCommand("get", "pods", "-o", "custom-columns=NAME:.metadata.name,NAMESPACE:.metadata.namespace,NODE:.spec.nodeName", "--no-headers", k8sNamespaceCmd)
-
-	if err != nil {
-
-		fmt.Println(string(out))
-		fmt.Println(err)
-		os.Exit(1)
-
-	}
-
-	// Print stdout for debug
-	//fmt.Println(string(out))
-
-	pods := strings.Split(string(out), "\n")
-
-	for _, pod := range pods {
-
-		if string(pod) != "" {
-
-			podinfo := strings.Fields(pod)
-
-			p := podObj{
-				name:      podinfo[0],
-				namespace: podinfo[1],
-				node:      podinfo[2],
-				az:        nodeinfo[podinfo[2]],
-			}
-
-			podMap[p.name] = p
-
-			// Print pod info for debug
-			//fmt.Printf("Pod: %s\n", podMap[p.name])
-		}
-
-	}
-
-	//fmt.Println(podMap)
-
-	w := printers.GetNewTabWriter(os.Stdout)
-	defer w.Flush()
-	fmt.Fprintln(w, "NAME\tNAMESPACE\tNODE\tAZ\t")
-
-	for az := range nodeazs {
-
-		//fmt.Printf("# AZ: %s\n", az)
-
-		for _, pod := range podMap {
-
-			if pod.az == az {
-
-				fmt.Fprintf(w, "%s\t%s\t%s\t%s\t", pod.name, pod.namespace, pod.node, pod.az)
-				fmt.Fprintln(w)
-
-			}
-
-		}
-
-	}
-
-}
-
 func init() {
 	rootCmd.AddCommand(podsCmd)
+}
 
-	podsCmd.Flags().StringP("namespace", "n", "", "If present, the namespace scope for this CLI request")
+func buildNodeList(nodes *v1.NodeList) map[string]nodeObj {
+
+	tmpNodeList := make(map[string]nodeObj)
+
+	for _, node := range nodes.Items {
+
+		newNode := nodeObj{
+			name: node.Name,
+			az:   node.GetLabels()[azLabel],
+		}
+
+		tmpNodeList[newNode.name] = newNode
+
+	}
+
+	return tmpNodeList
+}
+
+func buildPodList(nodeList map[string]nodeObj, pods *v1.PodList) []podObj {
+
+	var tmpPodList []podObj
+
+	for _, pod := range pods.Items {
+
+		newPod := podObj{
+			name:      pod.Name,
+			namespace: pod.Namespace,
+			node:      pod.Spec.NodeName,
+			az:        nodeList[pod.Spec.NodeName].az,
+		}
+
+		tmpPodList = append(tmpPodList, newPod)
+
+	}
+
+	return tmpPodList
+
 }

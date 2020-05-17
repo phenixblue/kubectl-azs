@@ -18,9 +18,11 @@ import (
 	"fmt"
 	"os"
 
-	"kubectl-azs/pkg/k8s"
+	"kubectl-azs/pkg/kube"
+	"kubectl-azs/pkg/printers"
 
 	"github.com/spf13/cobra"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // nodesCmd represents the nodes command
@@ -30,18 +32,33 @@ var nodesCmd = &cobra.Command{
 	Long:  `List nodes in a Kubernetes cluster by the defined availablity zone labels`,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		kubernetes := k8s.NewKubernetesCmd(true)
-		out, err := kubernetes.ExecuteCommand("get", "nodes", "-l", "failure-domain.beta.kubernetes.io/zone", "-o", "custom-columns=NAME:.metadata.name,AZ:.metadata.labels.failure-domain\\.beta\\.kubernetes\\.io/zone")
-
+		client, err := kube.CreateKubeClient(kubeconfig, configContext)
 		if err != nil {
-
-			fmt.Println(string(out))
 			fmt.Println(err)
 			os.Exit(1)
+		}
+
+		nodes, err := client.CoreV1().Nodes().List(metav1.ListOptions{LabelSelector: azLabel})
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		if len(nodes.Items) < 1 {
+			fmt.Printf("No nodes with target AZ label (%q) found\n", azLabel)
+			os.Exit(1)
+		}
+
+		w := printers.GetNewTabWriter(os.Stdout)
+		defer w.Flush()
+		fmt.Fprintln(w, "NODE NAME\tAZ\t")
+
+		for _, node := range nodes.Items {
+
+			fmt.Fprintf(w, "%v\t%v\t\n", node.GetName(), node.GetLabels()[azLabel])
 
 		}
 
-		fmt.Printf(string(out))
 	},
 }
 
