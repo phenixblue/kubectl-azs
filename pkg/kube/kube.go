@@ -48,8 +48,6 @@ func GetNodes(client kubernetes.Interface, label string, labelChanged bool) (*v1
 
 			label = strings.Replace(label, "failure-domain", "failure-domain.beta", 1)
 
-			fmt.Printf("Beta Label -> %v\n", label)
-
 			nodes, err = client.CoreV1().Nodes().List(metav1.ListOptions{LabelSelector: label})
 			if err != nil {
 				fmt.Println(err)
