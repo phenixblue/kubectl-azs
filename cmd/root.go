@@ -23,6 +23,7 @@ import (
 	"kubectl-azs/pkg/printers"
 
 	"github.com/spf13/cobra"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 var (
@@ -104,6 +105,19 @@ func init() {
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
+
+	// Configure the genericclioptions
+	streams := genericclioptions.IOStreams{
+		In:     os.Stdin,
+		Out:    os.Stdout,
+		ErrOut: os.Stderr,
+	}
+
+	// Setup generic Kubectl CLI flags
+	kubeConfigFlags := genericclioptions.NewConfigFlags(false)
+	kubeResouceBuilderFlags := genericclioptions.NewResourceBuilderFlags()
+
+	rootCmd.Flags().AddFlagSet()
 
 	rootCmd.PersistentFlags().StringVarP(&kubeconfig, "kubeconfig", "", "", "Kubernetes configuration file")
 	rootCmd.PersistentFlags().StringVar(&configContext, "context", "", "The name of the kubeconfig context to use")
